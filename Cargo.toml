@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 authors = ["bendn <bend.n@outlook.com>"]
 homepage = "https://github.com/bend-n/totally-sync-variable"
+description = "🔥"
+license = "MIT"
 
 [dependencies]
 paste = "1.0"
