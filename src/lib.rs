@@ -21,7 +21,6 @@ use std::ops::*;
 use std::path::Path;
 
 /// a variable stored on the filesystem (very secure 🔐)
-#[doc(hidden)]
 pub struct Var<T>(&'static str, PhantomData<T>);
 
 impl<T> Var<T> {
@@ -66,6 +65,12 @@ macro_rules! op {
                 self.set(&(self.get().clone() $char rhs.get().clone()));
             }
         }
+
+        impl<T: [<$op>]<T, Output = T> + Clone + DeserializeOwned + Serialize> [<$op Assign>]<T> for Var<T> {
+            fn [<$op:lower _assign>](&mut self, rhs: T) {
+                self.set(&(self.get().clone() $char rhs));
+            }
+        }
     }};
 }
 
@@ -78,9 +83,14 @@ op!(BitOr, |);
 op!(BitXor, ^);
 op!(Shl, <<);
 op!(Shr, >>);
+op!(Rem, %);
 
 #[macro_export]
 /// lil macro to define variables.
+/// ```
+/// # use totally_sync_variable::*;
+/// let v = def!(example = String::from("def!()"));
+/// ```
 macro_rules! def {
     ($name:ident = $value:expr) => {{
         let v = $crate::Var::new(stringify!($name));
@@ -91,6 +101,14 @@ macro_rules! def {
 
 #[macro_export]
 /// macro to reference variables from anywhere.
+/// ```
+/// # use totally_sync_variable::*;
+/// {
+///   let x = def!(cant_touch_this = 0u128);
+/// }
+/// let it_exists: u128 = refer!(cant_touch_this);
+/// assert_eq!(it_exists, 0); // yes i can!
+/// ```
 macro_rules! refer {
     ($name:ident) => {
         $crate::Var::new(stringify!($name)).get()
@@ -101,7 +119,7 @@ macro_rules! refer {
 fn it_works() {
     {
         let mut x = def!(x = 4u8);
-        x += def!(tmp = 4u8);
+        x += 4;
         assert_eq!(x.get(), 8);
     }
     let v: u8 = refer!(x);
